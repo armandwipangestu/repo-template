@@ -12,8 +12,8 @@ module.exports = {
     "main",
     { 
       name: "staging", 
-      prerelease: "rc" 
-    }
+      prerelease: "rc",
+    },
   ],
   tagFormat: "v${version}",
   plugins: [
@@ -48,7 +48,7 @@ module.exports = {
           noteKeywords: [
             "BREAKING CHANGE",
             "BREAKING CHANGES",
-          ]
+          ],
         },
       },
     ],
@@ -67,34 +67,34 @@ module.exports = {
             { type: "perf", section: "⚡ Performance" },
             { type: "refactor", section: "♻️ Refactor" },
             { type: "patch", section: "🩹 Patch" },
-          ]
+          ],
         },
         parserOpts: {
           noteKeywords: [
             "BREAKING CHANGE",
             "BREAKING CHANGES",
-          ]
+          ],
         },
-       }
+       },
     ],
     [
       "@semantic-release/changelog", 
       { 
-        changelogFile: "CHANGELOG.md"
-       }
+        changelogFile: "CHANGELOG.md",
+       },
     ],
     [
       "@semantic-release/npm", 
       { 
         npmPublish: false,
-       }
+       },
     ],
     [
       "@semantic-release/git",
       {
         assets: [
           "CHANGELOG.md", 
-          "package.json"
+          "package.json",
         ],
         message: "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
       },
@@ -119,15 +119,15 @@ Semantic-release failed to create release for this commit.
 
 Please check the log CI for more information and fix the problem.`,
         labels: [
-          "released"
+          "released",
         ],
       },
     ],
     [
       "@semantic-release/exec", 
       { 
-        successCmd: 'echo "${nextRelease.version}" > version.txt' 
-      }
+        successCmd: "echo \"${nextRelease.version}\" > version.txt", 
+      },
     ],
   ],
 };
