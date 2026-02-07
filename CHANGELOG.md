@@ -1,3 +1,10 @@
+## [1.0.1-rc.1](https://github.com/armandwipangestu/repo-template/compare/v1.0.0...v1.0.1-rc.1) (2026-02-07)
+
+### 🧹 Chores
+
+* **docs:** update README, add LICENSE ([61e955f](https://github.com/armandwipangestu/repo-template/commit/61e955f9a258ae0ff71dd325a8554284d3a744f1))
+* **release:** 1.0.0-rc.2 [skip ci] ([d1d5bb0](https://github.com/armandwipangestu/repo-template/commit/d1d5bb0a906759ed432cea8abbf6421184047d04))
+
 ## [1.0.0-rc.2](https://github.com/armandwipangestu/repo-template/compare/v1.0.0-rc.1...v1.0.0-rc.2) (2026-02-07)
 
 ### 🧹 Chores
