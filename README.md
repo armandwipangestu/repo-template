@@ -31,6 +31,20 @@ This repository is tooling-only and intentionally does not assume any specific f
 
 ---
 
+## Repo Stats
+
+![Alt](https://repobeats.axiom.co/api/embed/e1583995f59c14c6cee7a5075f4bcd0e9a399580.svg "Repobeats analytics image")
+
+[![Star History Chart](https://api.star-history.com/svg?repos=armandwipangestu/repo-template&type=date&legend=top-left)](https://www.star-history.com/#armandwipangestu/repo-template&type=date&legend=top-left)
+
+## Contributors
+
+<a href="https://github.com/armandwipangestu/repo-template/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=armandwipangestu/repo-template" />
+</a>
+
+---
+
 ## Repository Structure
 
 ```
