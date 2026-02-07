@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint"
+    "test": "echo \"No tests defined\"",
+    "lint": "eslint .",
+    "build": "bun run lint"
   },
   "repository": {
     "type": "git",
