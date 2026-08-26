@@ -98,7 +98,7 @@ release:
   script:
     - npx semantic-release
   variables:
-    GITLAB_TOKEN: $GITLAB_ACCESS_TOKEN
+    GITLAB_TOKEN: $GL_ACCESS_TOKEN
     NPM_TOKEN: "false"
   artifacts:
     paths:
@@ -194,4 +194,4 @@ labeler:
     - chmod +x .gitlab/scripts/labeler.sh
     - .gitlab/scripts/labeler.sh
   variables:
-    GITLAB_TOKEN: $GITLAB_ACCESS_TOKEN
+    GITLAB_TOKEN: $GL_ACCESS_TOKEN
