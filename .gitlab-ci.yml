@@ -1,0 +1,197 @@
+# =============================================================================
+# GitLab CI/CD Pipeline - Mirrors GitHub Actions Workflows
+# =============================================================================
+# This pipeline replicates the following GitHub Actions workflows:
+#   - .github/workflows/lint.yml       -> lint job (MR pipeline)
+#   - .github/workflows/pr-build.yml   -> build job (MR pipeline)
+#   - .github/workflows/release.yml    -> release jobs (branch pipeline)
+#   - .github/workflows/labeler.yml    -> labeler job (MR pipeline)
+# =============================================================================
+
+stages:
+  - lint
+  - build
+  - release
+  - deploy
+
+variables:
+  GHCR_IMAGE: "ghcr.io/armandwipangestu/repo-template"
+  DOCKERHUB_IMAGE: "devvnull/repo-template"
+
+# =============================================================================
+# CACHE CONFIGURATION
+# =============================================================================
+.default_cache: &default_cache
+  cache:
+    key:
+      files:
+        - bun.lock
+    paths:
+      - node_modules/
+      - .bun/install/cache/
+    policy: pull-push
+
+# =============================================================================
+# STAGE: LINT
+# Mirrors: .github/workflows/lint.yml
+# =============================================================================
+lint:
+  stage: lint
+  image: oven/bun:1.2.23-alpine
+  <<: *default_cache
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  before_script:
+    - bun install --frozen-lockfile
+  script:
+    - bun run lint
+
+# =============================================================================
+# STAGE: BUILD
+# Mirrors: .github/workflows/pr-build.yml (build-and-test job)
+# =============================================================================
+build:
+  stage: build
+  image: oven/bun:1.2.23-alpine
+  <<: *default_cache
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  before_script:
+    - bun install --frozen-lockfile
+  script:
+    - bun run build
+  artifacts:
+    reports:
+      dotenv: build.env
+    expire_in: 1 hour
+
+build-semantic-release-dry-run:
+  stage: build
+  image: node:25-alpine
+  <<: *default_cache
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  before_script:
+    - npm install
+  script:
+    - npx semantic-release --dry-run --branches=$CI_COMMIT_BRANCH
+  variables:
+    GITLAB_TOKEN: "false"
+    DEBUG: "semantic-release:*"
+  allow_failure: true
+
+# =============================================================================
+# STAGE: RELEASE
+# Mirrors: .github/workflows/release.yml (release-and-tagging-version job)
+# =============================================================================
+release:
+  stage: release
+  image: node:25-alpine
+  <<: *default_cache
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
+    - if: $CI_COMMIT_BRANCH == "main"
+  before_script:
+    - npm install
+  script:
+    - npx semantic-release
+  variables:
+    GITLAB_TOKEN: $GITLAB_ACCESS_TOKEN
+    NPM_TOKEN: "false"
+  artifacts:
+    paths:
+      - version.txt
+    expire_in: 1 hour
+
+# =============================================================================
+# STAGE: DEPLOY (DOCKER)
+# Mirrors: .github/workflows/release.yml (build-docker-sha + retag jobs)
+# =============================================================================
+build-docker-sha:
+  stage: deploy
+  image: docker:27
+  services:
+    - docker:27-dind
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
+    - if: $CI_COMMIT_BRANCH == "main"
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - apk add --no-cache git
+    - SHORT_SHA=$(git rev-parse --short HEAD)
+    - echo "SHORT_SHA=$SHORT_SHA" >> build.env
+    - echo "$GHCR_PASSWORD" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+  script:
+    - docker build --platform linux/amd64 -t $GHCR_IMAGE:$SHORT_SHA -t $DOCKERHUB_IMAGE:$SHORT_SHA .
+    - docker push $GHCR_IMAGE:$SHORT_SHA
+    - docker push $DOCKERHUB_IMAGE:$SHORT_SHA
+  artifacts:
+    reports:
+      dotenv: build.env
+    expire_in: 1 hour
+
+retag-and-push:
+  stage: deploy
+  image: docker:27
+  services:
+    - docker:27-dind
+  needs:
+    - job: build-docker-sha
+      artifacts: true
+    - job: release
+      artifacts: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
+    - if: $CI_COMMIT_BRANCH == "main"
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - apk add --no-cache git
+    - |
+      if [ ! -f "version.txt" ]; then
+        echo "No new version released. Skipping retag."
+        exit 0
+      fi
+    - VERSION=$(cat version.txt)
+    - echo "VERSION=$VERSION" >> build.env
+    - echo "$GHCR_PASSWORD" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+  script:
+    - |
+      if [ ! -f "version.txt" ]; then
+        echo "Skipping retag - no version.txt"
+        exit 0
+      fi
+    - docker pull --platform linux/amd64 $GHCR_IMAGE:$SHORT_SHA
+    - docker tag $GHCR_IMAGE:$SHORT_SHA $GHCR_IMAGE:$VERSION
+    - docker push $GHCR_IMAGE:$VERSION
+    - docker tag $GHCR_IMAGE:$SHORT_SHA $DOCKERHUB_IMAGE:$VERSION
+    - docker push $DOCKERHUB_IMAGE:$VERSION
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "main" ]; then
+        docker tag $GHCR_IMAGE:$VERSION $GHCR_IMAGE:latest
+        docker tag $GHCR_IMAGE:$VERSION $DOCKERHUB_IMAGE:latest
+        docker push $GHCR_IMAGE:latest
+        docker push $DOCKERHUB_IMAGE:latest
+      fi
+
+# =============================================================================
+# STAGE: LABELER (MR ONLY)
+# Mirrors: .github/workflows/labeler.yml
+# =============================================================================
+labeler:
+  stage: lint
+  image: alpine:latest
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  before_script:
+    - apk add --no-cache curl jq
+  script:
+    - chmod +x .gitlab/scripts/labeler.sh
+    - .gitlab/scripts/labeler.sh
+  variables:
+    GITLAB_TOKEN: $GITLAB_ACCESS_TOKEN
