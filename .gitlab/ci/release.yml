@@ -1,0 +1,23 @@
+# =============================================================================
+# Release
+# Mirrors: .github/workflows/release.yml (release-and-tagging-version job)
+# =============================================================================
+
+release:
+  stage: release
+  image: node:25-alpine
+  <<: *default_cache
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
+    - if: $CI_COMMIT_BRANCH == "main"
+  before_script:
+    - npm install
+  script:
+    - npx semantic-release
+  variables:
+    GITLAB_TOKEN: $GL_ACCESS_TOKEN
+    NPM_TOKEN: "false"
+  artifacts:
+    paths:
+      - version.txt
+    expire_in: 1 hour
