@@ -7,6 +7,57 @@ const repo = "repo-template";
 const dockerUser = "devvnull";
 const npmScope = `@${owner}`;
 
+// Detect CI platform
+const isGitLab = process.env.CI_SERVER_NAME === "GitLab" || process.env.GITLAB_CI === "true";
+const isGitHub = process.env.GITHUB_ACTIONS === "true";
+
+// Platform-specific release plugin
+const releasePlugin = isGitLab
+  ? [
+      "@semantic-release/gitlab",
+      {
+        successComment: `🎉 This MR is included in version **\${nextRelease.version}** 🎉
+
+🔗 **View Release:**
+
+- GitLab Release: [\${nextRelease.gitTag}](https://gitlab.com/${owner}/${repo}/-/releases/\${nextRelease.gitTag})
+- GitLab Container Registry: [\${nextRelease.version}](https://gitlab.com/${owner}/${repo}/-/packages)
+- Docker Hub: [\${nextRelease.version}](https://hub.docker.com/layers/${dockerUser}/${repo}/\${nextRelease.version})
+
+🤖 *"Kill all humans"* - Your [semantic-release](https://github.com/semantic-release/semantic-release) bot 🚀`,
+        failComment: `❌ **Release Failed**
+
+Semantic-release failed to create release for this commit.
+
+**Error:** \${error.message}
+
+Please check the CI log for more information and fix the problem.`,
+        labels: ["released"],
+      },
+    ]
+  : [
+      "@semantic-release/github",
+      {
+        successComment: `🎉 This PR is included in version **\${nextRelease.version}** 🎉
+
+🔗 **View Release:**
+
+- GitHub Release: [\${nextRelease.gitTag}](https://github.com/${owner}/${repo}/releases/tag/\${nextRelease.gitTag})
+- GitHub Container Registry: [\${nextRelease.version}](https://github.com/${owner}/${repo}/pkgs/container/${repo})
+- Docker Hub: [\${nextRelease.version}](https://hub.docker.com/layers/${dockerUser}/${repo}/\${nextRelease.version})
+
+🤖 *"Kill all humans"* - Your [semantic-release](https://github.com/semantic-release/semantic-release) bot 🚀`,
+        failComment: `❌ **Release Failed**
+
+Semantic-release failed to create release for this commit.
+
+**Error:** \${error.message}
+
+Please check the log CI for more information and fix the problem.`,
+        labels: ["released"],
+      },
+    ];
+
 module.exports = {
   branches: [
     "main",
@@ -99,30 +150,7 @@ module.exports = {
         message: "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
       },
     ],
-    [
-      "@semantic-release/github",
-      {
-        successComment: `🎉 This PR is included in version **\${nextRelease.version}** 🎉
-
-🔗 **View Release:** 
-
-- GitHub Release: [\${nextRelease.gitTag}](https://github.com/${owner}/${repo}/releases/tag/\${nextRelease.gitTag})
-- GitHub Container Registry: [\${nextRelease.version}](https://github.com/${owner}/${repo}/pkgs/container/${repo})
-- Docker Hub: [\${nextRelease.version}](https://hub.docker.com/layers/${dockerUser}/${repo}/\${nextRelease.version})
-
-🤖 *"Kill all humans"* - Your [semantic-release](https://github.com/semantic-release/semantic-release) bot 🚀`,
-        failComment: `❌ **Release Failed**
-
-Semantic-release failed to create release for this commit.
-
-**Error:** \${error.message}
-
-Please check the log CI for more information and fix the problem.`,
-        labels: [
-          "released",
-        ],
-      },
-    ],
+    releasePlugin,
     [
       "@semantic-release/exec", 
       { 

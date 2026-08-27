@@ -1,0 +1,94 @@
+# =============================================================================
+# Deploy (Docker)
+# Mirrors: .github/workflows/release.yml (build-docker-sha + retag jobs)
+# Pushes to 3 registries: GHCR, DockerHub, GitLab Container Registry
+# =============================================================================
+
+build-docker-sha:
+  stage: deploy
+  image: docker:27
+  services:
+    - docker:27-dind
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
+    - if: $CI_COMMIT_BRANCH == "main"
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - apk add --no-cache git
+    - SHORT_SHA=$(git rev-parse --short HEAD)
+    - echo "SHORT_SHA=$SHORT_SHA" >> build.env
+    - echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_USERNAME" --password-stdin
+    - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+  script:
+    - docker build --platform linux/amd64
+        -t $GHCR_IMAGE:$SHORT_SHA
+        -t $DOCKERHUB_IMAGE:$SHORT_SHA
+        -t $GITLAB_REGISTRY_IMAGE:$SHORT_SHA
+        .
+    - docker push $GHCR_IMAGE:$SHORT_SHA
+    - docker push $DOCKERHUB_IMAGE:$SHORT_SHA
+    - docker push $GITLAB_REGISTRY_IMAGE:$SHORT_SHA
+  artifacts:
+    reports:
+      dotenv: build.env
+    expire_in: 1 hour
+
+retag-and-push:
+  stage: deploy
+  image: docker:27
+  services:
+    - docker:27-dind
+  needs:
+    - job: build-docker-sha
+      artifacts: true
+    - job: release
+      artifacts: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
+    - if: $CI_COMMIT_BRANCH == "main"
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - apk add --no-cache git
+    - |
+      if [ ! -f "version.txt" ]; then
+        echo "No new version released. Skipping retag."
+        exit 0
+      fi
+    - VERSION=$(cat version.txt)
+    - echo "VERSION=$VERSION" >> build.env
+    - echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_USERNAME" --password-stdin
+    - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+  script:
+    - |
+      if [ ! -f "version.txt" ]; then
+        echo "Skipping retag - no version.txt"
+        exit 0
+      fi
+    - docker pull --platform linux/amd64 $GHCR_IMAGE:$SHORT_SHA
+
+    # Retag and Push to GHCR
+    - docker tag $GHCR_IMAGE:$SHORT_SHA $GHCR_IMAGE:$VERSION
+    - docker push $GHCR_IMAGE:$VERSION
+
+    # Retag and Push to DockerHub
+    - docker tag $GHCR_IMAGE:$SHORT_SHA $DOCKERHUB_IMAGE:$VERSION
+    - docker push $DOCKERHUB_IMAGE:$VERSION
+
+    # Retag and Push to GitLab Container Registry
+    - docker tag $GHCR_IMAGE:$SHORT_SHA $GITLAB_REGISTRY_IMAGE:$VERSION
+    - docker push $GITLAB_REGISTRY_IMAGE:$VERSION
+
+    # Latest tag (only on main)
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "main" ]; then
+        docker tag $GHCR_IMAGE:$VERSION $GHCR_IMAGE:latest
+        docker tag $GHCR_IMAGE:$VERSION $DOCKERHUB_IMAGE:latest
+        docker tag $GHCR_IMAGE:$VERSION $GITLAB_REGISTRY_IMAGE:latest
+        docker push $GHCR_IMAGE:latest
+        docker push $DOCKERHUB_IMAGE:latest
+        docker push $GITLAB_REGISTRY_IMAGE:latest
+      fi

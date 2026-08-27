@@ -1,0 +1,32 @@
+# =============================================================================
+# Build
+# Mirrors: .github/workflows/pr-build.yml (build-and-test job)
+# =============================================================================
+
+build:
+  extends: .bun-cache
+  stage: build
+  image: oven/bun:1.2.23-alpine
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  before_script:
+    - bun install --frozen-lockfile
+  script:
+    - bun run build
+
+build-semantic-release-dry-run:
+  extends: .bun-cache
+  stage: build
+  image: node:25-alpine
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  before_script:
+    - apk add --no-cache git
+    - npm install
+  script:
+    - npx semantic-release --dry-run --branches=$CI_COMMIT_BRANCH
+  variables:
+    GITLAB_TOKEN: "false"
+    DEBUG: "semantic-release:*"
+  allow_failure: true

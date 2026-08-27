@@ -1,0 +1,46 @@
+{
+  "labeler": {
+    "chore": {
+      "patterns": [
+        "CHANGELOG.md",
+        ".gitignore",
+        ".prettierrc",
+        "package.json",
+        "bun.lock"
+      ]
+    },
+    "ci": {
+      "patterns": [
+        ".gitlab-ci.yml",
+        ".gitlab/**",
+        ".github/workflows/**"
+      ]
+    },
+    "documentation": {
+      "patterns": [
+        "README.md",
+        "docs/**"
+      ]
+    },
+    "feature": {
+      "patterns": [
+        "src/**",
+        "app/**",
+        "components/**"
+      ]
+    },
+    "content": {
+      "patterns": [
+        "content/**"
+      ]
+    },
+    "config": {
+      "patterns": [
+        "*.config.*",
+        "tsconfig.json",
+        "components.json",
+        ".env.example"
+      ]
+    }
+  }
+}
