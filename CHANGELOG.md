@@ -1,3 +1,9 @@
+## [1.0.1-rc.4](https://github.com/armandwipangestu/repo-template/compare/v1.0.1-rc.3...v1.0.1-rc.4) (2026-08-27)
+
+### 🐛 Bug Fixes
+
+* labels as string for gitlab plugin, dynamic repositoryUrl ([8d8a319](https://github.com/armandwipangestu/repo-template/commit/8d8a319ad14bbed9ef238964830edfb510e9b837))
+
 ## [1.0.1-rc.3](https://github.com/armandwipangestu/repo-template/compare/v1.0.1-rc.2...v1.0.1-rc.3) (2026-08-27)
 
 ### 🐛 Bug Fixes
