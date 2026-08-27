@@ -4,9 +4,9 @@
 # =============================================================================
 
 release:
+  extends: .bun-cache
   stage: release
   image: node:25-alpine
-  <<: *default_cache
   rules:
     - if: $CI_COMMIT_BRANCH == "staging"
     - if: $CI_COMMIT_BRANCH == "main"

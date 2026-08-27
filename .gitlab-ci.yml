@@ -19,9 +19,9 @@ variables:
   DOCKERHUB_IMAGE: "devvnull/repo-template"
 
 # =============================================================================
-# CACHE CONFIGURATION
+# HIDDEN JOBS (reusable templates)
 # =============================================================================
-.default_cache: &default_cache
+.bun-cache:
   cache:
     key:
       files:

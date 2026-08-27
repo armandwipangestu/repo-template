@@ -4,9 +4,9 @@
 # =============================================================================
 
 lint:
+  extends: .bun-cache
   stage: lint
   image: oven/bun:1.2.23-alpine
-  <<: *default_cache
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

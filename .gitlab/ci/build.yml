@@ -4,9 +4,9 @@
 # =============================================================================
 
 build:
+  extends: .bun-cache
   stage: build
   image: oven/bun:1.2.23-alpine
-  <<: *default_cache
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -20,9 +20,9 @@ build:
     expire_in: 1 hour
 
 build-semantic-release-dry-run:
+  extends: .bun-cache
   stage: build
   image: node:25-alpine
-  <<: *default_cache
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   before_script:
