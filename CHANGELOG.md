@@ -1,3 +1,9 @@
+## [1.0.1-rc.3](https://github.com/armandwipangestu/repo-template/compare/v1.0.1-rc.2...v1.0.1-rc.3) (2026-08-27)
+
+### 🐛 Bug Fixes
+
+* add environment definition for protected variable access ([be2b002](https://github.com/armandwipangestu/repo-template/commit/be2b00297e160ed56cb286d7979d89535652e1f8))
+
 ## [1.0.1-rc.2](https://github.com/armandwipangestu/repo-template/compare/v1.0.1-rc.1...v1.0.1-rc.2) (2026-08-27)
 
 ### 🐛 Bug Fixes
