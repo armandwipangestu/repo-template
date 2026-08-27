@@ -15,8 +15,13 @@ MR_IID="${CI_MERGE_REQUEST_IID}"
 API_URL="${CI_API_V4_URL}"
 TOKEN="${GITLAB_TOKEN}"
 
-if [ -z "$PROJECT_ID" ] || [ -z "$MR_IID" ] || [ -z "$TOKEN" ]; then
-  echo "Error: Missing required environment variables (CI_PROJECT_ID, CI_MERGE_REQUEST_IID, GITLAB_TOKEN)"
+MISSING=""
+[ -z "$PROJECT_ID" ] && MISSING="${MISSING} CI_PROJECT_ID"
+[ -z "$MR_IID" ] && MISSING="${MISSING} CI_MERGE_REQUEST_IID"
+[ -z "$TOKEN" ] && MISSING="${MISSING} GITLAB_TOKEN (set GL_ACCESS_TOKEN in CI/CD variables)"
+
+if [ -n "$MISSING" ]; then
+  echo "Error: Missing required variables:${MISSING}"
   exit 1
 fi
 
