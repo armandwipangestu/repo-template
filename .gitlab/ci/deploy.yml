@@ -9,6 +9,8 @@ build-docker-sha:
   image: docker:27
   services:
     - docker:27-dind
+  environment:
+    name: $CI_COMMIT_BRANCH
   rules:
     - if: $CI_COMMIT_BRANCH == "staging"
     - if: $CI_COMMIT_BRANCH == "main"
@@ -45,6 +47,8 @@ retag-and-push:
       artifacts: true
     - job: release
       artifacts: true
+  environment:
+    name: $CI_COMMIT_BRANCH
   rules:
     - if: $CI_COMMIT_BRANCH == "staging"
     - if: $CI_COMMIT_BRANCH == "main"
