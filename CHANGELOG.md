@@ -1,3 +1,9 @@
+## [1.0.1-rc.5](https://github.com/armandwipangestu/repo-template/compare/v1.0.1-rc.4...v1.0.1-rc.5) (2026-08-27)
+
+### 🐛 Bug Fixes
+
+* move build-docker-sha to release stage so it runs in parallel ([46ea537](https://github.com/armandwipangestu/repo-template/commit/46ea5376a8253cd25ea78e8e5907d01acc2f0cd4))
+
 ## [1.0.1-rc.4](https://github.com/armandwipangestu/repo-template/compare/v1.0.1-rc.3...v1.0.1-rc.4) (2026-08-27)
 
 ### 🐛 Bug Fixes
