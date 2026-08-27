@@ -14,10 +14,6 @@ build:
     - bun install --frozen-lockfile
   script:
     - bun run build
-  artifacts:
-    reports:
-      dotenv: build.env
-    expire_in: 1 hour
 
 build-semantic-release-dry-run:
   extends: .bun-cache
