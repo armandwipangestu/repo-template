@@ -5,7 +5,7 @@
 # =============================================================================
 
 build-docker-sha:
-  stage: deploy
+  stage: release
   image: docker:27
   services:
     - docker:27-dind
