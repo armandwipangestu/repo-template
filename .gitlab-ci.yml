@@ -15,8 +15,10 @@ stages:
   - deploy
 
 variables:
+  GIT_DEPTH: 0
   GHCR_IMAGE: "ghcr.io/armandwipangestu/repo-template"
   DOCKERHUB_IMAGE: "devvnull/repo-template"
+  GITLAB_REGISTRY_IMAGE: "${CI_REGISTRY_IMAGE}"
 
 # =============================================================================
 # HIDDEN JOBS (reusable templates)

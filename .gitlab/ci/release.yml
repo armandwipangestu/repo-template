@@ -22,3 +22,4 @@ release:
     paths:
       - version.txt
     expire_in: 1 hour
+    when: always
