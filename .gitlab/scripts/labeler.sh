@@ -40,152 +40,114 @@ fi
 echo "Labeler: Changed files:"
 echo "$CHANGED_FILES"
 
-# Get current labels on the MR
+# Get current labels on the MR (comma-separated)
 CURRENT_LABELS=$(curl --silent --header "PRIVATE-TOKEN: ${TOKEN}" \
   "${API_URL}/projects/${PROJECT_ID}/merge_requests/${MR_IID}" | \
-  jq -r '.labels[]' 2>/dev/null || echo "")
+  jq -r '.labels | join(",")' 2>/dev/null || echo "")
+
+echo "Labeler: Current labels: '${CURRENT_LABELS}'"
 
 # Label definitions (mirrors .github/labeler.yml)
-# Format: label_name|glob_patterns (pipe-separated)
-LABEL_RULES="
-chore|CHANGELOG.md:.gitignore:.prettierrc:package.json:bun.lock
-ci|.gitlab-ci.yml:.gitlab/**
-documentation|README.md:docs/**
-feature|src/**:app/**:components/**
-content|content/**
-config|*.config.*:tsconfig.json:components.json:.env.example
-"
+LABELS_TO_ADD=""
 
-# Function to check if a file matches a glob pattern
-matches_pattern() {
-  file="$1"
-  pattern="$2"
+# --- check_chore: CHANGELOG.md, .gitignore, .prettierrc, package.json, bun.lock ---
+check_chore() {
+  for f in $CHANGED_FILES; do
+    case "$f" in
+      CHANGELOG.md|.gitignore|.prettierrc|package.json|bun.lock) return 0 ;;
+    esac
+  done
+  return 1
+}
 
-  # Handle ** (recursive) patterns
-  case "$pattern" in
-    **)
-      prefix="${pattern%%\*\*}"
-      prefix="${prefix%\/}"
-      if [ -n "$prefix" ]; then
-        case "$file" in
-          ${prefix}*) return 0 ;;
-        esac
-      fi
-      ;;
-    *)
-      # Exact match or simple wildcard
-      case "$file" in
-        $pattern) return 0 ;;
-      esac
-      ;;
+# --- check_ci: .gitlab-ci.yml, .gitlab/** ---
+check_ci() {
+  for f in $CHANGED_FILES; do
+    case "$f" in
+      .gitlab-ci.yml|.gitlab/*) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+# --- check_documentation: README.md, docs/** ---
+check_documentation() {
+  for f in $CHANGED_FILES; do
+    case "$f" in
+      README.md|docs/*) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+# --- check_feature: src/**, app/**, components/** ---
+check_feature() {
+  for f in $CHANGED_FILES; do
+    case "$f" in
+      src/*|app/*|components/*) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+# --- check_content: content/** ---
+check_content() {
+  for f in $CHANGED_FILES; do
+    case "$f" in
+      content/*) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+# --- check_config: *.config.*, tsconfig.json, components.json, .env.example ---
+check_config() {
+  for f in $CHANGED_FILES; do
+    case "$f" in
+      *.config.*|tsconfig.json|components.json|.env.example) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+# Check each label and build comma-separated list
+has_label() {
+  case ",$CURRENT_LABELS," in
+    *",$1,"*) return 0 ;;
   esac
   return 1
 }
 
-# Determine which labels to apply
-LABELS_TO_ADD=""
-
-echo "$LABEL_RULES" | while IFS='|' read -r label patterns; do
-  # Skip empty lines
-  [ -z "$label" ] && continue
-
-  # Trim whitespace
-  label=$(echo "$label" | xargs)
-  patterns=$(echo "$patterns" | xargs)
-
-  # Check if any changed file matches any pattern for this label
-  apply_label=false
-
-  OLD_IFS="$IFS"
-  IFS=':'
-  for pattern in $patterns; do
-    pattern=$(echo "$pattern" | xargs)
-    [ -z "$pattern" ] && continue
-
-    echo "$CHANGED_FILES" | while IFS= read -r file; do
-      [ -z "$file" ] && continue
-
-      # Check for ** patterns (recursive directory)
-      case "$pattern" in
-        **)
-          prefix="${pattern%%\*\*}"
-          prefix="${prefix%\/}"
-          suffix="${pattern##*\*\*}"
-          suffix="${suffix#\/}"
-
-          if [ -n "$prefix" ] && [ -n "$suffix" ]; then
-            case "$file" in
-              ${prefix}*${suffix}) apply_label=true; break ;;
-            esac
-          elif [ -n "$prefix" ]; then
-            case "$file" in
-              ${prefix}*) apply_label=true; break ;;
-            esac
-          elif [ -n "$suffix" ]; then
-            case "$file" in
-              *${suffix}) apply_label=true; break ;;
-            esac
-          fi
-          ;;
-        *)
-          # Simple exact match
-          case "$file" in
-            $pattern) apply_label=true; break ;;
-          esac
-          ;;
-      esac
-    done
-
-    $apply_label && break
-  done
-  IFS="$OLD_IFS"
-
-  if $apply_label; then
-    # Check if label already exists
-    already_exists=false
-    echo "$CURRENT_LABELS" | while IFS= read -r existing; do
-      if [ "$existing" = "$label" ]; then
-        already_exists=true
-        break
-      fi
-    done
-
-    if ! $already_exists; then
-      LABELS_TO_ADD="${LABELS_TO_ADD}${label},"
-      echo "Labeler: Will add label '${label}'"
-    else
-      echo "Labeler: Label '${label}' already exists"
-    fi
+add_label() {
+  has_label "$1" && return
+  if [ -n "$LABELS_TO_ADD" ]; then
+    LABELS_TO_ADD="${LABELS_TO_ADD},${1}"
+  else
+    LABELS_TO_ADD="$1"
   fi
-done
+  echo "Labeler: Will add label '${1}'"
+}
+
+check_chore && add_label "chore"
+check_ci && add_label "ci"
+check_documentation && add_label "documentation"
+check_feature && add_label "feature"
+check_content && add_label "content"
+check_config && add_label "config"
 
 # Apply labels via API
 if [ -n "$LABELS_TO_ADD" ]; then
-  # Remove trailing comma
-  LABELS_TO_ADD=$(echo "$LABELS_TO_ADD" | sed 's/,$//')
+  if [ -n "$CURRENT_LABELS" ]; then
+    ALL_LABELS="${CURRENT_LABELS},${LABELS_TO_ADD}"
+  else
+    ALL_LABELS="${LABELS_TO_ADD}"
+  fi
 
-  # Get current labels and add new ones
-  ALL_LABELS="${CURRENT_LABELS}"
-  for label in $(echo "$LABELS_TO_ADD" | tr ',' ' '); do
-    # Check if label already in the list
-    case "$ALL_LABELS" in
-      *"$label"*) ;;
-      *)
-        if [ -n "$ALL_LABELS" ]; then
-          ALL_LABELS="${ALL_LABELS},${label}"
-        else
-          ALL_LABELS="$label"
-        fi
-        ;;
-    esac
-  done
-
-  # Update MR labels
-  RESPONSE=$(curl --silent --request PUT \
+  curl --silent --request PUT \
     --header "PRIVATE-TOKEN: ${TOKEN}" \
     --header "Content-Type: application/json" \
     --data "{\"labels\": \"${ALL_LABELS}\"}" \
-    "${API_URL}/projects/${PROJECT_ID}/merge_requests/${MR_IID}")
+    "${API_URL}/projects/${PROJECT_ID}/merge_requests/${MR_IID}" > /dev/null
 
   echo "Labeler: Successfully updated labels to '${ALL_LABELS}'"
 else
