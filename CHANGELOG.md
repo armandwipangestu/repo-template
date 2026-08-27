@@ -1,3 +1,12 @@
+## [1.0.1-rc.2](https://github.com/armandwipangestu/repo-template/compare/v1.0.1-rc.1...v1.0.1-rc.2) (2026-08-27)
+
+### 🐛 Bug Fixes
+
+* align variable names, add GitLab registry, fix artifacts ([cd014d2](https://github.com/armandwipangestu/repo-template/commit/cd014d2c214c660895492e4c36218d1953c0f5a8))
+* install git in node:25-alpine for semantic-release ([bf364fc](https://github.com/armandwipangestu/repo-template/commit/bf364fc2f929ff7a03e81926128458a0029f40b1))
+* rewrite labeler to avoid POSIX shell subshell bug ([4a94123](https://github.com/armandwipangestu/repo-template/commit/4a94123957bd7c9cdefca84713c69147fa6766c2))
+* update bun.lock and improve labeler error message ([398e753](https://github.com/armandwipangestu/repo-template/commit/398e753ff3dc2db0c8e11b54f3282a22b7496638))
+
 ## [1.0.1-rc.1](https://github.com/armandwipangestu/repo-template/compare/v1.0.0...v1.0.1-rc.1) (2026-02-07)
 
 ### 🧹 Chores
