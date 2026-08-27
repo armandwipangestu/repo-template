@@ -32,7 +32,7 @@ Semantic-release failed to create release for this commit.
 **Error:** \${error.message}
 
 Please check the CI log for more information and fix the problem.`,
-        labels: ["released"],
+        labels: "released",
       },
     ]
   : [
@@ -54,11 +54,14 @@ Semantic-release failed to create release for this commit.
 **Error:** \${error.message}
 
 Please check the log CI for more information and fix the problem.`,
-        labels: ["released"],
+        labels: "released",
       },
     ];
 
 module.exports = {
+  repositoryUrl: isGitLab
+    ? `https://gitlab.com/${owner}/${repo}.git`
+    : `https://github.com/${owner}/${repo}.git`,
   branches: [
     "main",
     { 
