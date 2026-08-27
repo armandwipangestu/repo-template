@@ -1,0 +1,45 @@
+# =============================================================================
+# GitLab CI/CD Pipeline - Mirrors GitHub Actions Workflows
+# =============================================================================
+# This pipeline replicates the following GitHub Actions workflows:
+#   - .github/workflows/lint.yml       -> lint job (MR pipeline)
+#   - .github/workflows/pr-build.yml   -> build job (MR pipeline)
+#   - .github/workflows/release.yml    -> release jobs (branch pipeline)
+#   - .github/workflows/labeler.yml    -> labeler job (MR pipeline)
+# =============================================================================
+
+stages:
+  - lint
+  - build
+  - release
+  - deploy
+
+variables:
+  GIT_DEPTH: 0
+  GHCR_IMAGE: "ghcr.io/armandwipangestu/repo-template"
+  DOCKERHUB_IMAGE: "devvnull/repo-template"
+  GITLAB_REGISTRY_IMAGE: "${CI_REGISTRY_IMAGE}"
+
+# =============================================================================
+# HIDDEN JOBS (reusable templates)
+# =============================================================================
+.bun-cache:
+  cache:
+    key:
+      files:
+        - bun.lock
+    paths:
+      - node_modules/
+      - .bun/install/cache/
+    policy: pull-push
+
+# =============================================================================
+# INCLUDES
+# =============================================================================
+include:
+  - local: ".gitlab/ci/lint.yml"
+  - local: ".gitlab/ci/build.yml"
+  - local: ".gitlab/ci/release.yml"
+  - local: ".gitlab/ci/deploy.yml"
+  - local: ".gitlab/ci/labeler.yml"
+  - local: ".gitlab/ci/renovate.yml"

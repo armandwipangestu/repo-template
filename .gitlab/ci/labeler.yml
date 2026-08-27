@@ -1,0 +1,17 @@
+# =============================================================================
+# Labeler (MR Only)
+# Mirrors: .github/workflows/labeler.yml
+# =============================================================================
+
+labeler:
+  stage: lint
+  image: alpine:latest
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  before_script:
+    - apk add --no-cache curl jq
+  script:
+    - chmod +x .gitlab/scripts/labeler.sh
+    - .gitlab/scripts/labeler.sh
+  variables:
+    GITLAB_TOKEN: $GL_ACCESS_TOKEN

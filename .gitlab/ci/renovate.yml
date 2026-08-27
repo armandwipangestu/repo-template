@@ -1,0 +1,14 @@
+# =============================================================================
+# Renovate - Dependency Updates
+# =============================================================================
+
+renovate:
+  stage: lint
+  image: renovate/renovate:latest
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web"
+  variables:
+    LOG_LEVEL: info
+  script:
+    - renovate
