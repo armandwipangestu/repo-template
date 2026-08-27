@@ -26,6 +26,7 @@ build-semantic-release-dry-run:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   before_script:
+    - apk add --no-cache git
     - npm install
   script:
     - npx semantic-release --dry-run --branches=$CI_COMMIT_BRANCH
